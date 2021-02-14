@@ -185,6 +185,8 @@ class SocketServer {
             item: next.itemID,
             media: next.media,
             playedAt: new Date(next.playedAt).getTime(),
+            //talk about confusing variable names
+            previous: next.previous
           });
         } else {
           this.broadcast('advance', null);
@@ -375,6 +377,20 @@ class SocketServer {
        */
       'user:unban': ({ moderatorID, userID }) => {
         this.broadcast('unban', { moderatorID, userID });
+      },
+      /**
+       * Broadcast a leveling up user.
+       */
+      'user:levelup': ({user, nextLevel, levelupReward}) => {
+        this.sendTo(user, 'userLevelUp', {
+            user: user,
+            previousLevel: user.level,
+            nextLevel: nextLevel,
+            levelupReward: levelupReward
+        });
+      },
+      'user:gain': ({user, exp, totalExp, pp, totalPp}) => {
+        this.sendTo(user, 'userGain', {user, exp, totalExp, pp, totalPp});
       },
       /**
        * Force-close a connection.
@@ -601,24 +617,34 @@ class SocketServer {
   broadcast(command, data) {
     debug('broadcast', command, data);
 
+    this.uw.emit(command, data)
     this.connections.forEach((connection) => {
       debug('  to', connection.toString());
       connection.send(command, data);
     });
   }
-
+  /**
+   * Return a list of online users
+   *
+   */
+  getOnlineUsers() {
+    let users = [];
+    this.connections.forEach((connection) => {
+      users.push(connection.user);
+    });
+    
+    return users;
+  }
   /**
    * Send a command to a single user.
    *
-   * @param {Object|string} user User or user ID to send the command to.
+   * @param {Object|} user User to send the command to.
    * @param {string} command Command name.
    * @param {*} data Command data.
    */
   sendTo(user, command, data) {
-    const userID = typeof user === 'object' ? user.id : user;
-
     this.connections.forEach((connection) => {
-      if (connection.user && connection.user.id === userID) {
+      if (connection.user && connection.user.id == user._id) {
         connection.send(command, data);
       }
     });

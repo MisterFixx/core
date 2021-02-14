@@ -26,6 +26,7 @@ const acl = require('./plugins/acl');
 const waitlist = require('./plugins/waitlist');
 const passport = require('./plugins/passport');
 const migrations = require('./plugins/migrations');
+const leveling = require('./plugins/leveling');
 
 mongoose.Promise = Promise;
 const MongooseConnection = mongoose.Connection;
@@ -100,6 +101,7 @@ class UwaveServer extends EventEmitter {
       this.use(history);
       this.use(waitlist);
       this.use(booth);
+      this.use(leveling);
     }
 
     this.use(HttpApi.errorHandling);

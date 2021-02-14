@@ -48,7 +48,17 @@ const userSchema = new Schema({
   level: {
     type: Number, min: 0, max: 9001, default: 0,
   },
+  exp: {
+    type: Number, min: 0, max: 2147483647, default: 0,
+  },
+  pp: {
+    type: Number, min: 0, max: 2147483647, default: 0,
+  },
+  expDispenseCycles: {
+    type: Number, min: 0, max: 72, default: 0,
+  },
   lastSeenAt: { type: Date, default: Date.now },
+  lastExpDispense: { type: String, default: '1-01-1970'},
   exiled: { type: Boolean, default: false },
   banned: bannedSchema,
   pendingActivation: { type: String, required: false },
