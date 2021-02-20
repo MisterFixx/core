@@ -6,17 +6,15 @@ const formatYmd = date => date.toISOString().slice(0, 10);
 
 const config = {
     exp: {
-        perDj:        2,
-        perWoot:      1,
-        perGrab:      2,
-        perMeh:      -1,
         dispenserMin: 5,
-        dispenserMax: 7  
+        dispenserMax: 7,
+        waitlistMultiplier: 1.4 
     },
     pp: {   
-        dispenserMin:      18,
-        dispenserMax:      23,
-        levelupMultiplier: 250         
+        dispenserMin:      15,
+        dispenserMax:      20,
+        waitlistMultiplier: 1.2,
+        levelupMultiplier: 200         
     },
     expPerLevel: {
         1: 12, 2: 45, 3: 180, 4: 1350,
@@ -35,41 +33,9 @@ class Leveling {
   }
 
   async onStart() { 
-    //Actions that need to be done after uwave startup  
-    const plugin = this;
-    
-    //reward user with EXP for playing music    
-    this.uw.on('advance', function (data) {
-      if(data.previous != null){
-        let woots = data.previous.upvotes.length;
-        let mehs  = data.previous.downvotes.length;
-        let grabs = data.previous.favorites.length;
-            
-        var expGained = (woots*config.exp.perWoot)+(mehs*config.exp.perMeh)+(grabs*config.exp.perGrab);
-        plugin.gain(data.previous.user, 0, expGained);
-      }
-    });
-    
-    //automatically dispense EXP and PP every 5 minutes for 6 hours    
-    setInterval(function() {
-      //we're not user.saving()'ing in this scope because we're passing the modified user object to the gain() method which saves on its own.
-      plugin.uw.socketServer.getOnlineUsers().forEach((user) => {
-        if(user != undefined){
-          if(user.lastExpDispense != formatYmd(new Date())){
-            user.lastExpDispense = formatYmd(new Date());
-            user.expDispenseCycles = 0;
-          }
-          if(user.expDispenseCycles < 71){
-            user.expDispenseCycles++; 
-                        
-            let expToGive = Math.round(Math.random() * (config.exp.dispenserMax - config.exp.dispenserMin) + config.exp.dispenserMin);
-            let ppToGive  = Math.round(Math.random() * (config.pp.dispenserMax - config.pp.dispenserMin) + config.pp.dispenserMin);
-            
-            plugin.gain(user, ppToGive, expToGive)
-          }
-        }
-      });
-    }, 300000);
+    //Actions that need to be done after uwave startup         
+    //automatically dispense EXP and PP every 5 minutes  
+    setTimeout(this.dispenseExp, 30000, this.uw, this)
   }
   
   onStop() {
@@ -102,6 +68,35 @@ class Leveling {
     
     this.uw.publish('user:gain', {user: user, exp: exp, totalExp: user.exp, pp: pp, totalPp: user.pp});
     await user.save();
+  }
+  
+  async dispenseExp(uwave, plugin){
+    let [waitlist, currentlyPlaying] = await Promise.all([uwave.booth.getWaitlist(), uwave.booth.getCurrentEntry()]);
+    
+    uwave.socketServer.getOnlineUsers().forEach((user) => {
+      if(user != undefined){
+        if(user.lastExpDispense != formatYmd(new Date())){
+          user.lastExpDispense = formatYmd(new Date());
+          user.expDispenseCycles = 0;
+        }
+        if(user.expDispenseCycles < 71){
+          user.expDispenseCycles++; 
+                        
+          let expToGive = Math.round(Math.random() * (config.exp.dispenserMax - config.exp.dispenserMin) + config.exp.dispenserMin);
+          let ppToGive  = Math.round(Math.random() * (config.pp.dispenserMax - config.pp.dispenserMin) + config.pp.dispenserMin);
+            
+          //if user is in waitlist, or is curretly playing - multiply reward by amount in config.
+          if(waitlist.includes(user.id) || currentlyPlaying.user == user.id){
+            expToGive = Math.round(expToGive*config.exp.waitlistMultiplier);
+            ppToGive  = Math.round(ppToGive*config.pp.waitlistMultiplier);
+          }
+            
+          plugin.gain(user, ppToGive, expToGive)
+        }
+      }
+    });
+    
+    setTimeout(plugin.dispenseExp, 30000, uwave, plugin);            
   }
 }
 

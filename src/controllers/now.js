@@ -85,7 +85,13 @@ async function getState(req) {
   }
   
   //Delete unnecessary properties to avoid sending them for no reason
-  let cleanUser = _.omit(user.toObject(), ['expDispenseCycles', 'lastExpDispense', '__v']);
+  let cleanUser = {};
+  if(user != undefined){
+    cleanUser = _.omit(user.toObject(), ['expDispenseCycles', 'lastExpDispense', '__v']);
+  }
+  else{
+    cleanUser = user
+  }
 
   const stateShape = {
     motd,
