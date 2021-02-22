@@ -352,6 +352,20 @@ class SocketServer {
       'user:leave': ({ userID }) => {
         this.broadcast('leave', userID);
       },
+      /**	
+       * Broadcast that a user is playing.	
+       */	
+      'user:play': async ({ userID, artist, title }) => {	
+        if (userID !== null) {	
+          const { users } = this.uw;	
+          const user = await users.getUser(userID);	
+
+          this.broadcast('play', {	
+            user: user.toJSON(),	
+            song: `${artist} - ${title}`	
+          });	
+        }	
+      },
       /**
        * Broadcast a ban event.
        */
