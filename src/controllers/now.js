@@ -32,7 +32,7 @@ async function getOnlineUsers(uw) {
     .select({
       activePlaylist: 0,
       exiled: 0,
-      pp: 0,
+      points: 0,
       updatedAt: 0,
       __v: 0,
       expDispenseCycles: 0,
@@ -66,7 +66,7 @@ async function getState(req) {
   const firstActivePlaylistItem = activePlaylist ? getFirstItem(uw, activePlaylist) : null;
   const socketToken = user ? authRegistry.createAuthToken(user) : null;
   const authStrategies = passport.strategies();
-  const time = Date.now(); 
+  const time = Date.now();
 
   if (activePlaylist != null) {
     activePlaylist = activePlaylist

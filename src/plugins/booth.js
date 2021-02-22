@@ -180,7 +180,7 @@ class Booth {
     return this.uw.redis.lrange('waitlist', 0, -1);
   }
 
-  async publish(next, previous) {
+  async publish(next) {
     if (next) {
       this.uw.publish('advance:complete', {
         historyID: next.id,
@@ -188,15 +188,14 @@ class Booth {
         playlistID: next.playlist.id,
         itemID: next.item.id,
         media: next.media,
-        playedAt: next.playedAt,
-        previous: previous
+        playedAt: next.playedAt
       });
       
       this.uw.publish('playlist:cycle', {
         userID: next.user.id,
         playlistID: next.playlist.id,
       });
-      his.uw.publish('user:play', { userID: next.user.id, artist: next.media.artist, title: next.media.title });
+      this.uw.publish('user:play', { userID: next.user.id, artist: next.media.artist, title: next.media.title });
     } 
     else {
       this.uw.publish('advance:complete', null);

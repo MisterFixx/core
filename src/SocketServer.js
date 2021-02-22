@@ -184,9 +184,7 @@ class SocketServer {
             userID: next.userID,
             item: next.itemID,
             media: next.media,
-            playedAt: new Date(next.playedAt).getTime(),
-            //talk about confusing variable names
-            previous: next.previous
+            playedAt: new Date(next.playedAt).getTime()
           });
         } else {
           this.broadcast('advance', null);
@@ -355,20 +353,6 @@ class SocketServer {
         this.broadcast('leave', userID);
       },
       /**
-       * Broadcast that a user is playing.
-       */
-      'user:play': async ({ userID, artist, title }) => {
-        if (userID !== null) {
-          const { users } = this.uw;
-          const user = await users.getUser(userID);
-
-          this.broadcast('play', {
-            user: user.toJSON(),
-            song: `${artist} - ${title}`
-          });
-        }
-      },
-      /**
        * Broadcast a ban event.
        */
       'user:ban': ({
@@ -403,8 +387,8 @@ class SocketServer {
             levelupReward: levelupReward
         });
       },
-      'user:gain': ({user, exp, totalExp, pp, totalPp}) => {
-        this.sendTo(user, 'userGain', {user, exp, totalExp, pp, totalPp});
+      'user:gain': ({user, exp, totalExp, points, totalPoints}) => {
+        this.sendTo(user, 'userGain', {user, exp, totalExp, points, totalPoints});
       },
       /**
        * Force-close a connection.

@@ -74,7 +74,7 @@ class UsersRepository {
     });
   }
 
-  getUser(id) { 
+  getUser(id) {
     const User = this.uw.model('User');
     if (id instanceof User) {
       return id;

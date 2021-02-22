@@ -10,7 +10,7 @@ const config = {
         dispenserMax: 7,
         waitlistMultiplier: 1.4 
     },
-    pp: {   
+    points: {   
         dispenserMin:      15,
         dispenserMax:      20,
         waitlistMultiplier: 1.2,
@@ -42,13 +42,13 @@ class Leveling {
     //Actions that need to be done prior to shutdown
   }
   
-  async gain(id, pp, exp){
+  async gain(id, points, exp){
     const { users } = this.uw;
     let  user = await users.getUser(id);
     if (!user) throw new Error('User not found.');
 
-    if(pp != 0){
-        user.pp = user.pp+pp;
+    if(points != 0){
+        user.points = user.points+points;
     }
 
     if(exp != 0){
@@ -56,17 +56,17 @@ class Leveling {
     
       var nextLevel = user.level+1
       if(user.exp > config.expPerLevel[nextLevel]){
-        const levelupReward = nextLevel*config.pp.levelupMultiplier;
+        const levelupReward = nextLevel*config.points.levelupMultiplier;
         this.uw.publish('user:levelup', {user, nextLevel, levelupReward}); 
                
         user.level = nextLevel;
-        user.pp = user.pp+levelupReward;   
+        user.points = user.points+levelupReward;   
                 
-        this.uw.publish('user:gain', {user: user, exp: 0, totalExp: user.exp, pp: levelupReward, totalPp: user.pp});
+        this.uw.publish('user:gain', {user: user, exp: 0, totalExp: user.exp, points: levelupReward, totalPoints: user.points});
       }
     }
     
-    this.uw.publish('user:gain', {user: user, exp: exp, totalExp: user.exp, pp: pp, totalPp: user.pp});
+    this.uw.publish('user:gain', {user: user, exp: exp, totalExp: user.exp, points: points, totalPoints: user.points});
     await user.save();
   }
   
@@ -83,15 +83,15 @@ class Leveling {
           user.expDispenseCycles++; 
                         
           let expToGive = Math.round(Math.random() * (config.exp.dispenserMax - config.exp.dispenserMin) + config.exp.dispenserMin);
-          let ppToGive  = Math.round(Math.random() * (config.pp.dispenserMax - config.pp.dispenserMin) + config.pp.dispenserMin);
+          let pointsToGive  = Math.round(Math.random() * (config.points.dispenserMax - config.points.dispenserMin) + config.points.dispenserMin);
             
           //if user is in waitlist, or is curretly playing - multiply reward by amount in config.
           if(waitlist.includes(user.id) || currentlyPlaying.user == user.id){
             expToGive = Math.round(expToGive*config.exp.waitlistMultiplier);
-            ppToGive  = Math.round(ppToGive*config.pp.waitlistMultiplier);
+            pointsToGive  = Math.round(pointsToGive*config.points.waitlistMultiplier);
           }
             
-          plugin.gain(user, ppToGive, expToGive)
+          plugin.gain(user, pointsToGive, expToGive)
         }
       }
     });

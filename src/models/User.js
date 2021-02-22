@@ -51,7 +51,7 @@ const userSchema = new Schema({
   exp: {
     type: Number, min: 0, max: 2147483647, default: 0,
   },
-  pp: {
+  points: {
     type: Number, min: 0, max: 2147483647, default: 0,
   },
   expDispenseCycles: {
