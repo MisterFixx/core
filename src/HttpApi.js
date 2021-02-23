@@ -72,7 +72,7 @@ class UwaveHttpApi extends Router {
           defaultSrc: ["*", "'unsafe-inline'"],
           scriptSrc: ["*", "'unsafe-inline'"],
           styleSrc: ["*", "'unsafe-inline'"],
-          upgradeInsecureRequests: []          
+          upgradeInsecureRequests: []
         },
       },
     }));

@@ -352,19 +352,19 @@ class SocketServer {
       'user:leave': ({ userID }) => {
         this.broadcast('leave', userID);
       },
-      /**	
-       * Broadcast that a user is playing.	
-       */	
-      'user:play': async ({ userID, artist, title }) => {	
-        if (userID !== null) {	
-          const { users } = this.uw;	
-          const user = await users.getUser(userID);	
+      /**
+       * Broadcast that a user is playing.
+       */
+      'user:play': async ({ userID, artist, title }) => {
+        if (userID !== null) {
+          const { users } = this.uw;
+          const user = await users.getUser(userID);
 
-          this.broadcast('play', {	
-            user: user.toJSON(),	
-            song: `${artist} - ${title}`	
-          });	
-        }	
+          this.broadcast('play', {
+            user: user.toJSON(),
+            song: `${artist} - ${title}`
+          });
+        }
       },
       /**
        * Broadcast a ban event.
@@ -629,7 +629,7 @@ class SocketServer {
   broadcast(command, data) {
     debug('broadcast', command, data);
 
-    this.uw.emit(command, data)
+    this.uw.emit(command, data);
     this.connections.forEach((connection) => {
       debug('  to', connection.toString());
       connection.send(command, data);
@@ -650,7 +650,7 @@ class SocketServer {
   /**
    * Send a command to a single user.
    *
-   * @param {Object|} user User to send the command to.
+   * @param {Object} user User to send the command to.
    * @param {string} command Command name.
    * @param {*} data Command data.
    */

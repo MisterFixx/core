@@ -10,11 +10,11 @@ const config = {
         dispenserMax: 7,
         waitlistMultiplier: 1.4 
     },
-    points: {   
+    points: {
         dispenserMin:      15,
         dispenserMax:      20,
         waitlistMultiplier: 1.2,
-        levelupMultiplier: 200         
+        levelupMultiplier: 200
     },
     expPerLevel: {
         1: 12, 2: 45, 3: 180, 4: 1350,
@@ -23,7 +23,7 @@ const config = {
         13: 69225, 14: 85575, 15: 110550, 16: 139290,
         17: 173450, 18: 212450, 19: 262025, 20: 315450,
         21: 371375, 22: 427392, 23: 483409, 24: 539426,
-        25: 595442 
+        25: 595442
     }
 };
 
@@ -32,9 +32,9 @@ class Leveling {
     this.uw = uw;
   }
 
-  async onStart() { 
-    //Actions that need to be done after uwave startup         
-    //automatically dispense EXP and PP every 5 minutes  
+  async onStart() {
+    //Actions that need to be done after uwave startup
+    //automatically dispense EXP and PP every 5 minutes
     setTimeout(this.dispenseExp, 30000, this.uw, this)
   }
   
@@ -52,15 +52,15 @@ class Leveling {
     }
 
     if(exp != 0){
-      user.exp = user.exp+exp;  
+      user.exp = user.exp+exp;
     
-      var nextLevel = user.level+1
+      var nextLevel = user.level+1;
       if(user.exp > config.expPerLevel[nextLevel]){
         const levelupReward = nextLevel*config.points.levelupMultiplier;
-        this.uw.publish('user:levelup', {user, nextLevel, levelupReward}); 
+        this.uw.publish('user:levelup', {user, nextLevel, levelupReward});
                
         user.level = nextLevel;
-        user.points = user.points+levelupReward;   
+        user.points = user.points+levelupReward;
                 
         this.uw.publish('user:gain', {user: user, exp: 0, totalExp: user.exp, points: levelupReward, totalPoints: user.points});
       }
@@ -80,7 +80,7 @@ class Leveling {
           user.expDispenseCycles = 0;
         }
         if(user.expDispenseCycles < 71){
-          user.expDispenseCycles++; 
+          user.expDispenseCycles++;
                         
           let expToGive = Math.round(Math.random() * (config.exp.dispenserMax - config.exp.dispenserMin) + config.exp.dispenserMin);
           let pointsToGive  = Math.round(Math.random() * (config.points.dispenserMax - config.points.dispenserMin) + config.points.dispenserMin);
@@ -91,12 +91,12 @@ class Leveling {
             pointsToGive  = Math.round(pointsToGive*config.points.waitlistMultiplier);
           }
             
-          plugin.gain(user, pointsToGive, expToGive)
+          plugin.gain(user, pointsToGive, expToGive);
         }
       }
     });
     
-    setTimeout(plugin.dispenseExp, 30000, uwave, plugin);            
+    setTimeout(plugin.dispenseExp, 30000, uwave, plugin);
   }
 }
 
