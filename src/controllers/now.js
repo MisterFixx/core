@@ -82,15 +82,6 @@ async function getState(req) {
         throw err;
       });
   }
-  
-  //Delete unnecessary properties to avoid sending them for no reason
-  let cleanUser = {};
-  if(user != undefined){
-    cleanUser = _.omit(user.toObject(), ['expDispenseCycles', 'lastExpDispense', '__v']);
-  }
-  else{
-    cleanUser = user
-  }
 
   // Delete unnecessary properties to avoid sending them for no reason
   let cleanUser = {};
