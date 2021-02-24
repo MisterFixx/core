@@ -50,37 +50,15 @@ const config = {
 class Leveling {
   constructor(uw) {
     this.uw = uw;
-    this.dispenser = null;
   }
 
-  async onStart() {
-    // Actions that need to be done after uwave startup
-    // automatically dispense EXP and PP every 5 minutes
-    this.dispenser = setTimeout(
-      async () => this.dispenseExp(),
-      300000,
-    );
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  onStop() {
-    // Actions that need to be done prior to shutdown
-  }
-
-  async getOnlineUsers() {
-    const { User } = this.uw.models;
-
+  async isUserOnline(userID) {
     const userIDs = await this.uw.redis.lrange('users', 0, -1);
-    const users = await User.find({ _id: { $in: userIDs } });
 
-    return users;
+    return userIDs.includes(userID);
   }
 
-  async gain(id, points, exp) {
-    const { users } = this.uw;
-    const user = await users.getUser(id);
-    if (!user) throw new Error('User not found.');
-
+  async gain(user, points, exp) {
     if (points !== 0) {
       user.points += points;
     }
@@ -91,80 +69,78 @@ class Leveling {
       const nextLevel = user.level + 1;
       if (user.exp > config.expPerLevel[nextLevel]) {
         const levelupReward = nextLevel * config.points.levelupMultiplier;
-        this.uw.publish('user:levelup', { user, nextLevel, levelupReward });
+        this.uw.publish('user:levelup', { userID: `${user.id}`, level: nextLevel });
 
         user.level = nextLevel;
         user.points += levelupReward;
 
         this.uw.publish('user:gain', {
-          user, exp: 0, totalExp: user.exp, points: levelupReward, totalPoints: user.points,
+          userID: `${user.id}`, exp: user.exp, points: user.points,
         });
       }
     }
 
     this.uw.publish('user:gain', {
-      user, exp, totalExp: user.exp, points, totalPoints: user.points,
+      userID: `${user.id}`, exp: user.exp, points: user.points,
     });
     await user.save();
+
+    if (await this.isUserOnline(user.id)) {
+      setTimeout(
+        async () => this.dispenseExp(user.id),
+        300000,
+      );
+    }
   }
 
-  async dispenseExp() {
-    const [waitlist, currentlyPlaying, users] = await Promise.all(
-      [this.uw.booth.getWaitlist(), this.uw.booth.getCurrentEntry(), this.getOnlineUsers()],
+  async dispenseExp(userID) {
+    const { users } = this.uw;
+
+    const user = await users.getUser(userID);
+    if (!user) {
+      throw new Error('User not found.');
+    }
+
+    const [waitlist, currentlyPlaying] = await Promise.all(
+      [this.uw.booth.getWaitlist(), this.uw.booth.getCurrentEntry()],
     );
 
-    users.forEach(async (user) => {
-      if (user !== undefined) {
-        if (user.lastExpDispense !== Date.now()) {
-          user.lastExpDispense = Date.now();
-          user.expDispenseCycles = 0;
-        }
-        if (user.expDispenseCycles < 71) {
-          user.expDispenseCycles += 1;
-
-          let expToGive = Math.round(
-            Math.random()
-            * (config.exp.dispenserMax - config.exp.dispenserMin)
-            + config.exp.dispenserMin,
-          );
-
-          let pointsToGive = Math.round(
-            Math.random()
-            * (config.points.dispenserMax - config.points.dispenserMin)
-            + config.points.dispenserMin,
-          );
-
-          // if user is in waitlist, or is curretly playing - multiply reward by amount in config.
-          if (currentlyPlaying) {
-            if (waitlist.includes(user.id) || currentlyPlaying.user === user.id) {
-              expToGive = Math.round(expToGive * config.exp.waitlistMultiplier);
-              pointsToGive = Math.round(pointsToGive * config.points.waitlistMultiplier);
-            }
-          }
-
-          await this.gain(user, pointsToGive, expToGive);
-        }
+    if (user !== undefined) {
+      if (user.lastExpDispense !== Date.now()) {
+        user.lastExpDispense = Date.now();
+        user.expDispenseCycles = 0;
       }
-    });
+      if (user.expDispenseCycles < 71) {
+        user.expDispenseCycles += 1;
 
-    this.dispenser = setTimeout(
-      async () => this.dispenseExp(),
-      300000,
-    );
+        let expToGive = Math.round(
+          Math.random()
+          * (config.exp.dispenserMax - config.exp.dispenserMin)
+          + config.exp.dispenserMin,
+        );
+
+        let pointsToGive = Math.round(
+          Math.random()
+          * (config.points.dispenserMax - config.points.dispenserMin)
+          + config.points.dispenserMin,
+        );
+
+        // if user is in waitlist, or is curretly playing - multiply reward by amount in config.
+        if (currentlyPlaying) {
+          if (waitlist.includes(user.id) || currentlyPlaying.user === user.id) {
+            expToGive = Math.round(expToGive * config.exp.waitlistMultiplier);
+            pointsToGive = Math.round(pointsToGive * config.points.waitlistMultiplier);
+          }
+        }
+
+        await this.gain(user, pointsToGive, expToGive);
+      }
+    }
   }
 }
 
 async function levelingPlugin(uw) {
   uw.leveling = new Leveling(uw);
-
-  uw.after(async (err) => {
-    if (!err) {
-      await uw.leveling.onStart();
-    }
-  });
-  uw.onClose(() => {
-    uw.leveling.onStop();
-  });
 }
 
 module.exports = levelingPlugin;

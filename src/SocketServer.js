@@ -393,19 +393,16 @@ class SocketServer {
       /**
        * Broadcast a leveling up user.
        */
-      'user:levelup': ({ user, nextLevel, levelupReward }) => {
-        this.sendTo(user, 'userLevelUp', {
-          user,
-          previousLevel: user.level,
-          nextLevel,
-          levelupReward,
+      'user:levelup': ({ userID, level }) => {
+        this.broadcast('levelup', {
+          userID, level,
         });
       },
       'user:gain': ({
-        user, exp, totalExp, points, totalPoints,
+        userID, exp, points,
       }) => {
-        this.sendTo(user, 'userGain', {
-          user, exp, totalExp, points, totalPoints,
+        this.broadcast('gain', {
+          userID, exp, points,
         });
       },
       /**
@@ -633,7 +630,6 @@ class SocketServer {
   broadcast(command, data) {
     debug('broadcast', command, data);
 
-    this.uw.emit(command, data);
     this.connections.forEach((connection) => {
       debug('  to', connection.toString());
       connection.send(command, data);
