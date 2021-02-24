@@ -1,4 +1,5 @@
 'use strict';
+// üWave plugin that adds leveling and points to üWave
 
 const createDebug = require('debug');
 
@@ -105,18 +106,12 @@ class Leveling {
       user, exp, totalExp: user.exp, points, totalPoints: user.points,
     });
     await user.save();
-
-    this.dispenser = setTimeout(
-      async () => this.dispenseExp(),
-      300000,
-    );
   }
 
   async dispenseExp() {
-    const [waitlist, currentlyPlaying] = await Promise.all(
-      [this.uw.booth.getWaitlist(), this.uw.booth.getCurrentEntry()],
+    const [waitlist, currentlyPlaying, users] = await Promise.all(
+      [this.uw.booth.getWaitlist(), this.uw.booth.getCurrentEntry(), this.getOnlineUsers()],
     );
-    const users = await this.getOnlineUsers();
 
     users.forEach(async (user) => {
       if (user !== undefined) {
@@ -151,6 +146,11 @@ class Leveling {
         }
       }
     });
+
+    this.dispenser = setTimeout(
+      async () => this.dispenseExp(),
+      300000,
+    );
   }
 }
 
