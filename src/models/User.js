@@ -58,7 +58,7 @@ const userSchema = new Schema({
     type: Number, min: 0, max: 72, default: 0,
   },
   lastSeenAt: { type: Date, default: Date.now },
-  lastExpDispense: { type: String, default: '1-01-1970'},
+  lastExpDispense: { type: Date, default: Date.now },
   exiled: { type: Boolean, default: false },
   banned: bannedSchema,
   pendingActivation: { type: String, required: false },
